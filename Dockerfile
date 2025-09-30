@@ -1,20 +1,17 @@
+FROM jrottenberg/ffmpeg:4.4-ubuntu as ffmpeg
+
 FROM python:3.9-slim
 
-# Install ffmpeg
-RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
+# Copy ffmpeg binary from stage 1
+COPY --from=ffmpeg /usr/local/bin/ffmpeg /usr/local/bin/
 
-# Set working dir
 WORKDIR /app
 
-# Install Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy app code
 COPY . .
 
-# Expose port (optional for clarity)
 EXPOSE 8000
 
-# Run the FastAPI app
 CMD ["uvicorn", "motion_server:app", "--host", "0.0.0.0", "--port", "8000"]
