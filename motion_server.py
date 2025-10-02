@@ -7,14 +7,18 @@ import os
 app = FastAPI(
     title="Motion Server",
     description="Server to generate simple motion video effects from images",
-    version="1.1.0"
+    version="1.2.0"
 )
 
 @app.get("/")
 def root():
     return {"message": "Motion server running!"}
 
-@app.post("/animate")
+@app.post(
+    "/animate",
+    response_class=FileResponse,
+    responses={200: {"content": {"video/mp4": {}}}}
+)
 async def animate(file: UploadFile = File(...)):
     # Save uploaded image
     in_path = f"/tmp/{uuid.uuid4()}_{file.filename}"
