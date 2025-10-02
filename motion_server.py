@@ -6,8 +6,8 @@ import os
 
 app = FastAPI(
     title="Motion Server",
-    description="Test server for simple animation generation",
-    version="1.0.0"
+    description="Server to generate simple motion video effects from images",
+    version="1.1.0"
 )
 
 @app.get("/")
@@ -23,13 +23,18 @@ async def animate(file: UploadFile = File(...)):
     with open(in_path, "wb") as f:
         f.write(await file.read())
 
-    # Use ffmpeg to create a 3s video (just loops the image for now)
+    # Apply Ken Burns effect with ffmpeg (slow zoom + pan)
     cmd = [
         "ffmpeg", "-y",
-        "-loop", "1", "-i", in_path,
-        "-c:v", "libx264", "-t", "3", "-pix_fmt", "yuv420p",
+        "-i", in_path,
+        "-vf", "zoompan=z='zoom+0.001':d=125,scale=1280:720",
+        "-c:v", "libx264", "-t", "5", "-pix_fmt", "yuv420p",
         out_path
     ]
-    subprocess.run(cmd, check=True)
 
-    return FileResponse(out_path, media_type="video/mp4", filename="animation.mp4")
+    try:
+        subprocess.run(cmd, check=True)
+    except subprocess.CalledProcessError as e:
+        return {"error": f"ffmpeg failed: {e}"}
+
+    return FileResponse(out_path, media_type="video/mp4", filename="animated.mp4")
